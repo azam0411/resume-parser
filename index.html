@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>API Test Client</title>
+  </head>
+  <body>
+    <h1>Portfolio API Tester</h1>
+
+    <!-- Resume Upload Form -->
+    <h2>1. Upload Resume</h2>
+    <form id="resumeForm">
+      <input type="file" id="resumeFile" name="resume" required />
+      <button type="submit">Upload</button>
+    </form>
+    <pre id="resumeResult"></pre>
+
+    <!-- Translation Form -->
+    <h2>2. Translate Content</h2>
+    <form id="translateForm">
+      <textarea
+        id="contentInput"
+        placeholder="Enter content"
+        rows="4"
+        cols="50"
+      ></textarea
+      ><br />
+      <select id="langSelect">
+        <option value="hi">Hindi</option>
+        <option value="fr">French</option>
+        <option value="es">Spanish</option>
+      </select>
+      <button type="submit">Translate</button>
+    </form>
+    <pre id="translateResult"></pre>
+
+    <!-- Pricing Section -->
+    <h2>3. Get Price by Country</h2>
+    <select id="countrySelect">
+      <option value="IN">India</option>
+      <option value="US">USA</option>
+      <option value="JP">Japan</option>
+      <option value="EU">Europe</option>
+    </select>
+    <button onclick="getPrice()">Get Price</button>
+    <pre id="priceResult"></pre>
+
+    <script>
+      const baseURL = "http://127.0.0.1:5000";
+
+      // Upload Resume
+      document
+        .getElementById("resumeForm")
+        .addEventListener("submit", async (e) => {
+          console.log("hello");
+
+          e.preventDefault();
+
+          const formData = new FormData();
+          const file = document.getElementById("resumeFile").files[0];
+          formData.append("resume", file);
+          console.log(file);
+
+          let resultElem = document.getElementById("resumeResult");
+          resultElem.innerText = "Uploading...";
+          try {
+            const res = await fetch(`${baseURL}/upload-resume`, {
+              method: "POST",
+              body: formData,
+            });
+            console.log("Status code:", res.status);
+            let data;
+            try {
+              data = await res.json();
+            } catch (jsonErr) {
+              resultElem.innerText = `Error: Invalid JSON response`;
+              return;
+            }
+            if (!res.ok) {
+              resultElem.innerText = `Error: ${data.error || res.statusText}`;
+              return;
+            }
+            resultElem.innerText = JSON.stringify(data, null, 2);
+          } catch (err) {
+            resultElem.innerText = `Error: ${err.message}`;
+          }
+        });
+
+      // Translate Content
+      document
+        .getElementById("translateForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const content = document.getElementById("contentInput").value;
+          const lang = document.getElementById("langSelect").value;
+
+          const res = await fetch(`${baseURL}/translate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content, lang }),
+          });
+          const data = await res.json();
+          document.getElementById("translateResult").innerText = JSON.stringify(
+            data,
+            null,
+            2
+          );
+        });
+
+      // Get Price by Country
+      async function getPrice() {
+        const country = document.getElementById("countrySelect").value;
+        const res = await fetch(`${baseURL}/get-price?country=${country}`);
+        const data = await res.json();
+        document.getElementById("priceResult").innerText = JSON.stringify(
+          data,
+          null,
+          2
+        );
+      }
+    </script>
+  </body>
+</html>
