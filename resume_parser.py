@@ -34,24 +34,92 @@ def parse_resume(file_path):
 
 
 def extract_name(text):
-    lines = text.split('\n')
-    return lines[0].strip() if lines else "John Doe"
+    import re
+    lines = [l.strip() for l in text.split('\n') if l.strip()]
+    # Try to find a line with two words (likely a name) at the top
+    for line in lines[:5]:
+        if re.match(r'^[A-Z][a-z]+ [A-Z][a-z]+$', line):
+            return line
+    # Fallback: first non-empty line
+    return lines[0] if lines else "John Doe"
 
 
 def extract_about(text):
-    return "An enthusiastic software developer looking for challenging opportunities."
+    import re
+    # Look for 'Summary' or 'About' section
+    match = re.search(r'(Summary|About)[\s\n:]+(.+?)(\n\w+:|\n\n|$)', text, re.IGNORECASE | re.DOTALL)
+    if match:
+        about = match.group(2).strip()
+        # Remove trailing section header if present
+        about = re.split(r'\n\w+:', about)[0].strip()
+        return about
+    # Fallback: first 3 lines after name
+    lines = [l.strip() for l in text.split('\n') if l.strip()]
+    return ' '.join(lines[1:4]) if len(lines) > 3 else "About not found."
 
 
 def extract_skills(text):
-    return ["Python", "Flask", "JavaScript", "MongoDB"]
+    import re
+    # Look for 'Skills' section
+    match = re.search(r'Skills[\s\n:]+(.+?)(\n\w+:|\n\n|$)', text, re.IGNORECASE | re.DOTALL)
+    if match:
+        skills_block = match.group(1)
+        # Split by comma or newline
+        skills = re.split(r',|\n', skills_block)
+        return [s.strip() for s in skills if s.strip()]
+    # Fallback: look for lines with many commas
+    for line in text.split('\n'):
+        if line.count(',') >= 2:
+            return [s.strip() for s in line.split(',') if s.strip()]
+    return []
 
 
 def extract_experience(text):
-    return [{"company": "XYZ Corp", "role": "Intern", "duration": "6 months"}]
+    import re
+    # Look for 'Experience' section
+    match = re.search(r'Experience[\s\n:]+(.+?)(\n\w+:|\n\n|$)', text, re.IGNORECASE | re.DOTALL)
+    experiences = []
+    if match:
+        exp_block = match.group(1)
+        # Try to extract lines like 'Company - Role (Duration)'
+        for line in exp_block.split('\n'):
+            m = re.match(r'(.+?)\s+-\s+(.+?)\s+\((.+?)\)', line.strip())
+            if m:
+                experiences.append({
+                    "company": m.group(1).strip(),
+                    "role": m.group(2).strip(),
+                    "duration": m.group(3).strip()
+                })
+        # Fallback: lines with at least 2 words
+        if not experiences:
+            for line in exp_block.split('\n'):
+                parts = [p.strip() for p in re.split(r'-|\(|\)', line) if p.strip()]
+                if len(parts) >= 2:
+                    experiences.append({
+                        "company": parts[0],
+                        "role": parts[1],
+                        "duration": parts[2] if len(parts) > 2 else ""
+                    })
+    return experiences if experiences else []
 
 
 def extract_education(text):
-    return [{"degree": "B.Tech in AIML", "year": "2024", "institution": "ADGIPS"}]
+    import re
+    # Look for 'Education' section
+    match = re.search(r'Education[\s\n:]+(.+?)(\n\w+:|\n\n|$)', text, re.IGNORECASE | re.DOTALL)
+    educations = []
+    if match:
+        edu_block = match.group(1)
+        # Try to extract lines like 'Degree, Year, Institution'
+        for line in edu_block.split('\n'):
+            parts = [p.strip() for p in line.split(',') if p.strip()]
+            if len(parts) >= 3:
+                educations.append({
+                    "degree": parts[0],
+                    "year": parts[1],
+                    "institution": parts[2]
+                })
+    return educations if educations else []
 
 
 def extract_email(text):

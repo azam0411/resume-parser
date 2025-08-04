@@ -15,6 +15,44 @@
     </form>
     <pre id="resumeResult"></pre>
 
+    <!-- User Details Form (auto-filled from resume) -->
+    <h2>1a. User Details (Auto-filled)</h2>
+    <form id="userDetailsForm">
+      <label>Name: <input type="text" id="userName" name="name" /></label><br />
+      <label>Title: <input type="text" id="userTitle" name="title" /></label
+      ><br />
+      <label>Email: <input type="email" id="userEmail" name="email" /></label
+      ><br />
+      <label
+        >Bio:<br />
+        <textarea id="userBio" name="bio" rows="2" cols="40"></textarea></label
+      ><br />
+      <label
+        >Skills:
+        <input
+          type="text"
+          id="userSkills"
+          name="skills"
+          placeholder="Comma separated" /></label
+      ><br />
+      <label
+        >Experience:
+        <input
+          type="text"
+          id="userExperience"
+          name="experience"
+          placeholder="Company, Role, Duration" /></label
+      ><br />
+      <label
+        >Education:
+        <input
+          type="text"
+          id="userEducation"
+          name="education"
+          placeholder="Degree, Year, Institution" /></label
+      ><br />
+    </form>
+
     <!-- Translation Form -->
     <h2>2. Translate Content</h2>
     <form id="translateForm">
@@ -53,9 +91,7 @@
         .getElementById("resumeForm")
         .addEventListener("submit", async (e) => {
           console.log("hello");
-
           e.preventDefault();
-
           const formData = new FormData();
           const file = document.getElementById("resumeFile").files[0];
           formData.append("resume", file);
@@ -81,6 +117,47 @@
               return;
             }
             resultElem.innerText = JSON.stringify(data, null, 2);
+
+            // Auto-fill user details form
+            if (data.hero) {
+              document.getElementById("userName").value = data.hero.name || "";
+              document.getElementById("userTitle").value =
+                data.hero.title || "";
+            }
+            if (data.contact) {
+              document.getElementById("userEmail").value =
+                data.contact.email || "";
+            }
+            if (data.about) {
+              document.getElementById("userBio").value = data.about.bio || "";
+            }
+            if (data.skills) {
+              document.getElementById("userSkills").value = Array.isArray(
+                data.skills
+              )
+                ? data.skills.join(", ")
+                : data.skills;
+            }
+            if (
+              data.experience &&
+              Array.isArray(data.experience) &&
+              data.experience.length > 0
+            ) {
+              const exp = data.experience[0];
+              document.getElementById("userExperience").value = `${
+                exp.company || ""
+              }, ${exp.role || ""}, ${exp.duration || ""}`;
+            }
+            if (
+              data.education &&
+              Array.isArray(data.education) &&
+              data.education.length > 0
+            ) {
+              const edu = data.education[0];
+              document.getElementById("userEducation").value = `${
+                edu.degree || ""
+              }, ${edu.year || ""}, ${edu.institution || ""}`;
+            }
           } catch (err) {
             resultElem.innerText = `Error: ${err.message}`;
           }
